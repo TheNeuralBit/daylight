@@ -1,0 +1,7 @@
+{
+  "name": "daylight",
+  "version": "0.01",
+  "dependencies": {
+    "moment-timezone": "latest"
+  }
+}

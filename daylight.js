@@ -1,9 +1,15 @@
+function getTimezone() {
+  // TODO: use Google Timezone API
+  return {name: 'Europe/London'};
+}
+
 var width = 700;
 var height = 525;
 var padding = 40;
 
 var lat = 52.68;
 var lng = -1.114;
+var local_timezone = getTimezone().name;
 
 // the vertical axis is a time scale that runs from 00:00 - 23:59
 // the horizontal axis is a time scale that runs from the 2011-01-01 to 2011-12-31
@@ -142,7 +148,10 @@ var minute_scale = d3.scale.linear()
 var sunriseLine = d3.svg.area()
   .x(function(d) { return x(d); })
   .y1(function(d) { 
-      return minute_scale(calcSunriseSetUTC(1, d.getJulian(), lat, lng));
+      var minutes = calcSunriseSetUTC(1, d.getJulian(), lat, lng);
+      console.log(minutes);
+      minutes = UTCMinutesToTZMinutes(d, minutes);
+      return minute_scale(minutes);
     })
   .interpolate("linear");
 
@@ -155,7 +164,10 @@ var sunsetLine = d3.svg.area()
   .x(function(d) { return x(d); })
   .y0(height)
   .y1(function(d) { 
-      return minute_scale(calcSunriseSetUTC(0, d.getJulian(), lat, lng)); 
+      var minutes = calcSunriseSetUTC(0, d.getJulian(), lat, lng); 
+      console.log(minutes);
+      minutes = UTCMinutesToTZMinutes(d, minutes);
+      return minute_scale(minutes);
     })
   .interpolate("linear");
 
@@ -172,3 +184,8 @@ lineGroup.append("svg:line")
   .attr("x2", width)
   .attr("y2", d3.round(y(new Date(2011, 0, 1, 12))) + 0.5)
   .attr("stroke", "lightgray");
+
+function UTCMinutesToTZMinutes(day, minutes){
+  var my_moment = moment(day).utc().hours(0).minutes(minutes).seconds((minutes % 1)*60).tz(local_timezone);
+  return my_moment.hours()*60 + my_moment.minutes() + my_moment.seconds()/60;
+}
