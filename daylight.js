@@ -5,8 +5,12 @@ var padding = 40;
 // the vertical axis is a time scale that runs from 00:00 - 23:59
 // the horizontal axis is a time scale that runs from the 2011-01-01 to 2011-12-31
 
-var y = d3.time.scale().domain([new Date(2011, 0, 1), new Date(2011, 0, 1, 23, 59)]).range([0, height]);
-var x = d3.time.scale().domain([new Date(2011, 0, 1), new Date(2011, 11, 31)]).range([0, width]);
+var y = d3.time.scale()
+  .domain([new Date(2011, 0, 1), new Date(2011, 0, 1, 23, 59)])
+  .range([0, height]);
+var x = d3.time.scale()
+  .domain([new Date(2011, 0, 1), new Date(2011, 11, 31)])
+  .range([0, width]);
 
 var monthNames = ["Jan", "Feb", "Mar", "April", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -65,85 +69,85 @@ function midMonthDates() {
   return d3.range(0, 12).map(function(i) { return new Date(2011, i, 15); });
 }
 
-var dayLength = d3.select("#daylight-plot").
-  append("svg:svg").
-  attr("width", width + padding * 2).
-  attr("height", height + padding * 2);
+var dayLength = d3.select("#daylight-plot")
+  .append("svg:svg")
+  .attr("width", width + padding * 2)
+  .attr("height", height + padding * 2);
 
 // create a group to hold the axis-related elements
-var axisGroup = dayLength.append("svg:g").
-  attr("transform", "translate("+padding+","+padding+")");
+var axisGroup = dayLength.append("svg:g")
+  .attr("transform", "translate(" + padding + "," + padding + ")");
 
 // draw the x and y tick marks. Since they are behind the visualization, they
 // can be drawn all the way across it. Because the  has been
 // translated, they stick out the left side by going negative.
 
-axisGroup.selectAll(".yTicks").
-  data(d3.range(5, 22)).
-  enter().append("svg:line").
-  attr("x1", -5).
+axisGroup.selectAll(".yTicks")
+  .data(d3.range(5, 22))
+  .enter().append("svg:line")
+  .attr("x1", -5)
   // Round and add 0.5 to fix anti-aliasing effects (see above)
-  attr("y1", function(d) { return d3.round(y(new Date(2011, 0, 1, d))) + 0.5; }).
-  attr("x2", width+5).
-  attr("y2", function(d) { return d3.round(y(new Date(2011, 0, 1, d))) + 0.5; }).
-  attr("stroke", "lightgray").
-  attr("class", "yTicks");
+  .attr("y1", function(d) { return d3.round(y(new Date(2011, 0, 1, d))) + 0.5; })
+  .attr("x2", width + 5)
+  .attr("y2", function(d) { return d3.round(y(new Date(2011, 0, 1, d))) + 0.5; })
+  .attr("stroke", "lightgray")
+  .attr("class", "yTicks");
 
-axisGroup.selectAll(".xTicks").
-  data(midMonthDates).
-  enter().append("svg:line").
-  attr("x1", x).
-  attr("y1", -5).
-  attr("x2", x).
-  attr("y2", height+5).
-  attr("stroke", "lightgray").
-  attr("class", "yTicks");
+axisGroup.selectAll(".xTicks")
+  .data(midMonthDates)
+  .enter().append("svg:line")
+  .attr("x1", x)
+  .attr("y1", -5)
+  .attr("x2", x)
+  .attr("y2", height+5)
+  .attr("stroke", "lightgray")
+  .attr("class", "yTicks");
 
 // draw the text for the labels. Since it is the same on top and
 // bottom, there is probably a cleaner way to do this by copying the
 // result and translating it to the opposite side
 
-axisGroup.selectAll("text.xAxisTop").
-  data(midMonthDates).
-  enter().
-  append("svg:text").
-  text(function(d, i) { return monthNames[i]; }).
-  attr("x", x).
-  attr("y", -8).
-  attr("text-anchor", "middle").
-  attr("class", "axis xAxisTop");
+axisGroup.selectAll("text.xAxisTop")
+  .data(midMonthDates)
+  .enter()
+  .append("svg:text")
+  .text(function(d, i) { return monthNames[i]; })
+  .attr("x", x)
+  .attr("y", -8)
+  .attr("text-anchor", "middle")
+  .attr("class", "axis xAxisTop");
 
-axisGroup.selectAll("text.xAxisBottom").
-  data(midMonthDates).
-  enter().
-  append("svg:text").
-  text(function(d, i) { return monthNames[i]; }).
-  attr("x", x).
-  attr("y", height+15).
-  attr("text-anchor", "middle").
-  attr("class", "xAxisBottom");
+axisGroup.selectAll("text.xAxisBottom")
+  .data(midMonthDates)
+  .enter()
+  .append("svg:text")
+  .text(function(d, i) { return monthNames[i]; })
+  .attr("x", x)
+  .attr("y", height+15)
+  .attr("text-anchor", "middle")
+  .attr("class", "xAxisBottom");
 
-axisGroup.selectAll("text.yAxisLeft").
-  data(d3.range(5, 22)).
-  enter().
-  append("svg:text").
-  text(yAxisLabel).
-  attr("x", -7).
-  attr("y", function(d) { return y(new Date(2011, 0, 1, d)); }).
-  attr("dy", "3").
-  attr("class", "yAxisLeft").
-  attr("text-anchor", "end");
+axisGroup.selectAll("text.yAxisLeft")
+  .data(d3.range(5, 22))
+  .enter()
+  .append("svg:text")
+  .text(yAxisLabel)
+  .attr("x", -7)
+  .attr("y", function(d) { return y(new Date(2011, 0, 1, d)); })
+  .attr("dy", "3")
+  .attr("class", "yAxisLeft")
+  .attr("text-anchor", "end");
 
-axisGroup.selectAll("text.yAxisRight").
-  data(d3.range(5, 22)).
-  enter().
-  append("svg:text").
-  text(yAxisLabel).
-  attr("x", width+7).
-  attr("y", function(d) { return y(new Date(2011, 0, 1, d)); }).
-  attr("dy", "3").
-  attr("class", "yAxisRight").
-  attr("text-anchor", "start");
+axisGroup.selectAll("text.yAxisRight")
+  .data(d3.range(5, 22))
+  .enter()
+  .append("svg:text")
+  .text(yAxisLabel)
+  .attr("x", width+7)
+  .attr("y", function(d) { return y(new Date(2011, 0, 1, d)); })
+  .attr("dy", "3")
+  .attr("class", "yAxisRight")
+  .attr("text-anchor", "start");
 
 // create a group for the sunrise and sunset paths
 
@@ -153,12 +157,12 @@ var lineGroup = dayLength.append("svg:g").
 // draw the background. The part of this that remains uncovered will
 // represent the daylight hours.
 
-lineGroup.append("svg:rect").
-  attr("x", 0).
-  attr("y", 0).
-  attr("height", height).
-  attr("width", width).
-  attr("fill", "lightyellow");
+lineGroup.append("svg:rect")
+  .attr("x", 0)
+  .attr("y", 0)
+  .attr("height", height)
+  .attr("width", width)
+  .attr("fill", "lightyellow");
 
 // The meat of the visualization is surprisingly simple. sunriseLine
 // and sunsetLine are areas (closed svg:path elements) that use the date
@@ -166,32 +170,32 @@ lineGroup.append("svg:rect").
 // coordinate. The sunrise shape is anchored at the top of the chart, and
 // sunset area is anchored at the bottom of the chart.
 
-var sunriseLine = d3.svg.area().
-  x(function(d) { return x(d.date); }).
-  y1(function(d) { return y(new Date(2011, 0, 1, d.sunrise[0], d.sunrise[1])); }).
-  interpolate("linear");
+var sunriseLine = d3.svg.area()
+  .x(function(d) { return x(d.date); })
+  .y1(function(d) { return y(new Date(2011, 0, 1, d.sunrise[0], d.sunrise[1])); })
+  .interpolate("linear");
 
-lineGroup.
-  append("svg:path").
-  attr("d", sunriseLine(data)).
-  attr("fill", "steelblue");
+lineGroup
+  .append("svg:path")
+  .attr("d", sunriseLine(data))
+  .attr("fill", "steelblue");
 
-var sunsetLine = d3.svg.area().
-  x(function(d) { return x(d.date); }).
-  y0(height).
-  y1(function(d) { return y(new Date(2011, 0, 1, d.sunset[0], d.sunset[1])); }).
-  interpolate("linear");
+var sunsetLine = d3.svg.area()
+  .x(function(d) { return x(d.date); })
+  .y0(height)
+  .y1(function(d) { return y(new Date(2011, 0, 1, d.sunset[0], d.sunset[1])); })
+  .interpolate("linear");
 
-lineGroup.append("svg:path").
-  attr("d", sunsetLine(data)).
-  attr("fill", "steelblue");
+lineGroup.append("svg:path")
+  .attr("d", sunsetLine(data))
+  .attr("fill", "steelblue");
 
 // finally, draw a line representing 12:00 across the entire
 // visualization
 
-lineGroup.append("svg:line").
-  attr("x1", 0).
-  attr("y1", d3.round(y(new Date(2011, 0, 1, 12))) + 0.5).
-  attr("x2", width).
-  attr("y2", d3.round(y(new Date(2011, 0, 1, 12))) + 0.5).
-  attr("stroke", "lightgray");
+lineGroup.append("svg:line")
+  .attr("x1", 0)
+  .attr("y1", d3.round(y(new Date(2011, 0, 1, 12))) + 0.5)
+  .attr("x2", width)
+  .attr("y2", d3.round(y(new Date(2011, 0, 1, 12))) + 0.5)
+  .attr("stroke", "lightgray");
