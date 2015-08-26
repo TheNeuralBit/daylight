@@ -1,14 +1,14 @@
 function getTimezone() {
   // TODO: use Google Timezone API
-  return {name: 'Europe/London'};
+  return {name: 'America/New_York'};
 }
 
 var width = 700;
 var height = 525;
 var padding = 40;
 
-var lat = 52.68;
-var lng = -1.114;
+var lat = 40.744;
+var lng = -73.982;
 var local_timezone = getTimezone().name;
 
 // the vertical axis is a time scale that runs from 00:00 - 23:59
