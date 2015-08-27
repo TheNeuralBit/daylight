@@ -64,7 +64,7 @@
         scope.$watch('lng', function() {
           console.log('lng triggered render!');
           Timezone.setLatLng(scope.lat, scope.lng);
-          then(scope.render);
+          scope.render();
         }, true);
         
         scope.render = function() {
