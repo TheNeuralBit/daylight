@@ -1,20 +1,29 @@
 (function() {
- angular.module('daylight', [])
-  .controller('DaylightController', function() {
+ angular.module('daylight', ['tzwhere'])
+  .controller('DaylightController', ['Timezone', function(Timezone) {
     this.lat = 40.744;
     this.lng = -73.982;
-  })
-  .factory('Timezone', function() {
+    this.Timezone = Timezone;
+  }])
+  .factory('Timezone', ['$http', 'TZWhere', function($http, TZWhere) {
     factory = {};
     factory.location = {lat: 0.0, lng: 0.0, timezone: ''};
     factory.setLatLng = setLatLng;
     factory.UTCMinutesToTZMinutes = UTCMinutesToTZMinutes;
+    TZWhere.init('./tz_world_compressed.json');
     
     // function definitions //
     function setLatLng(lat, lng) {
       factory.location.lat = lat;
       factory.location.lng = lng;
-      factory.location.timezone = 'America/New_York';
+      factory.location.timezone = TZWhere.tzNameAt(lat, lng);
+      
+      //return $http.get("https://maps.googleapis.com/maps/api/timezone/json?location=" + lat + "," + lng + "&timestamp=0&key=AIzaSyBx3DdLaG_XbDQcylhf62bqenDj5ZC91_4").success(function(response) {
+      //  factory.location.lat = lat;
+      //  factory.location.lng = lng;
+      //  factory.location.timezone = response.timeZoneId;
+      //  console.log('new timezone is ' + response.timeZoneId);
+      //});
     }
 
     function UTCMinutesToTZMinutes(day, minutes){
@@ -23,7 +32,7 @@
     }
 
     return factory;
-  })
+  }])
   .directive('daylightPlot', ['Timezone', function(Timezone) {
     return {
       'restrict': 'EA',
@@ -37,21 +46,31 @@
           .append("svg:svg")
           .attr("width", width + padding * 2)
           .attr("height", height + padding * 2);
+      
+        var tooltip = d3.select(element[0])
+          .append('div')
+          .attr('class', 'tooltip');
+        tooltip.append('div')
+          .attr('class', 'sunrise');
+        tooltip.append('div')
+          .attr('class', 'sunset');
+
         
-        console.log(scope.lat);
-        console.log(scope.lng);
         scope.$watch('lat', function() {
           console.log('lat triggered render!');
+          Timezone.setLatLng(scope.lat, scope.lng);
           scope.render();
         }, true);
         scope.$watch('lng', function() {
           console.log('lng triggered render!');
-          scope.render();
+          Timezone.setLatLng(scope.lat, scope.lng);
+          then(scope.render);
         }, true);
         
         scope.render = function() {
+          dayLength.selectAll('*').remove();
+
           console.log('rendering!');
-          Timezone.setLatLng(scope.lat, scope.lng);
           // the vertical axis is a time scale that runs from 00:00 - 23:59
           // the horizontal axis is a time scale that runs from the 2011-01-01 to 2011-12-31
           
@@ -66,7 +85,7 @@
           
           // Create a list of dates from the x() time scale
           // Gets dates evenly spaced every 5 days
-          var data = x.ticks(d3.time.days, 5);
+          var data = x.ticks(d3.time.days, 5).map( function(date){ return {date: date}; } );
           
           function yAxisLabel(d) {
             if (d == 12) { return "noon"; }
@@ -170,7 +189,7 @@
             .attr("height", height)
             .attr("width", width)
             .attr("fill", "lightyellow");
-          
+
           // The meat of the visualization is surprisingly simple. sunriseLine
           // and sunsetLine are areas (closed svg:path elements) that use the date
           // for the x coordinate and sunrise and sunset (respectively) for the y
@@ -182,28 +201,27 @@
             .range([0, height]);
           
           var sunriseLine = d3.svg.area()
-            .x(function(d) { return x(d); })
+            .x(function(d) { return x(d.date); })
             .y1(function(d) { 
-                var minutes = calcSunriseSetUTC(1, d.getJulian(), scope.lat, scope.lng);
-                console.log(minutes);
-                minutes = Timezone.UTCMinutesToTZMinutes(d, minutes);
-                return minute_scale(minutes);
+                d.sunrise = calcSunriseSetUTC(1, d.date.getJulian(), scope.lat, scope.lng);
+                d.sunrise = Timezone.UTCMinutesToTZMinutes(d.date, d.sunrise);
+                return minute_scale(d.sunrise);
               })
             .interpolate("linear");
-          
+
+          var bisectDate = d3.bisector(function(d) { return d.date; }).left;
           lineGroup
             .append("svg:path")
             .attr("d", sunriseLine(data))
             .attr("fill", "steelblue");
           
           var sunsetLine = d3.svg.area()
-            .x(function(d) { return x(d); })
+            .x(function(d) { return x(d.date); })
             .y0(height)
             .y1(function(d) { 
-                var minutes = calcSunriseSetUTC(0, d.getJulian(), scope.lat, scope.lng); 
-                console.log(minutes);
-                minutes = Timezone.UTCMinutesToTZMinutes(d, minutes);
-                return minute_scale(minutes);
+                d.sunset = calcSunriseSetUTC(0, d.date.getJulian(), scope.lat, scope.lng); 
+                d.sunset = Timezone.UTCMinutesToTZMinutes(d.date, d.sunset);
+                return minute_scale(d.sunset);
               })
             .interpolate("linear");
           
@@ -213,15 +231,80 @@
           
           // finally, draw a line representing 12:00 across the entire
           // visualization
-          
           lineGroup.append("svg:line")
             .attr("x1", 0)
             .attr("y1", d3.round(y(new Date(2011, 0, 1, 12))) + 0.5)
             .attr("x2", width)
             .attr("y2", d3.round(y(new Date(2011, 0, 1, 12))) + 0.5)
             .attr("stroke", "lightgray");
+
+          var indicator_params = {};
+          indicator_params.radius = 5;
+          indicator_params.stroke = 'darkgray';
+          indicator_params.stroke_width = 2;
+
+          var day_indicator = lineGroup
+            .append('svg:line')
+            .attr('stroke', indicator_params.stroke)
+            .attr('stroke-width', indicator_params.stroke_width);
+
+          var sunrise_indicator = lineGroup
+            .append('svg:circle')
+            .attr('r', indicator_params.radius)
+            .attr('stroke', indicator_params.stroke)
+            .attr('stroke-width', indicator_params.stroke_width)
+            .attr('fill-opacity', 0);
+
+          var sunset_indicator = lineGroup
+            .append('svg:circle')
+            .attr('r', indicator_params.radius)
+            .attr('stroke', indicator_params.stroke)
+            .attr('stroke-width', indicator_params.stroke_width)
+            .attr('fill-opacity', 0);
+
+          var setIndicatorDisplay = function(display) { 
+            return function() {
+              tooltip.style('display', display);
+              sunrise_indicator.style('display', display);
+              sunset_indicator.style('display', display);
+              day_indicator.style('display', display);
+            };
+          };
+          
+          var enableIndicators = setIndicatorDisplay('block');
+          var disableIndicators = setIndicatorDisplay('none');
+
+          lineGroup.selectAll('rect, path')
+            .on('mouseenter', enableIndicators)
+            .on('mouseleave', disableIndicators)
+            .on('mousemove', function() {
+              var x_pos = d3.mouse(this)[0];
+              var x0 = x.invert(x_pos);
+                  i = bisectDate(data, x0, 1);
+                  d0 = data[i];
+                  d1 = data[i+1];
+                  
+              tooltip.select('.sunrise').html(d0.sunrise);
+              tooltip.select('.sunset').html(d0.sunrise);
+
+              var sunrise_pos = minute_scale(d0.sunrise);
+              var sunset_pos = minute_scale(d0.sunset);
+
+              sunrise_indicator
+                .attr('cx', x_pos)
+                .attr('cy', sunrise_pos);
+              sunset_indicator
+                .attr('cx', x_pos)
+                .attr('cy', sunset_pos);
+              day_indicator
+                .attr('x1', x_pos)
+                .attr('x2', x_pos)
+                .attr('y1', sunrise_pos + indicator_params.radius)
+                .attr('y2', sunset_pos - indicator_params.radius);
+            });
+
+
         };
-        scope.render();
       }
     };
   }]);
