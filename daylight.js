@@ -23,13 +23,6 @@
       factory.location.lat = lat;
       factory.location.lng = lng;
       factory.location.timezone = TZWhere.tzNameAt(lat, lng);
-      
-      //return $http.get("https://maps.googleapis.com/maps/api/timezone/json?location=" + lat + "," + lng + "&timestamp=0&key=AIzaSyBx3DdLaG_XbDQcylhf62bqenDj5ZC91_4").success(function(response) {
-      //  factory.location.lat = lat;
-      //  factory.location.lng = lng;
-      //  factory.location.timezone = response.timeZoneId;
-      //  console.log('new timezone is ' + response.timeZoneId);
-      //});
     }
 
     function UTCMinutesToTZMinutes(day, minutes){
