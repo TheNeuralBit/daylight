@@ -41,6 +41,8 @@
         var width = 700;
         var height = 525;
         var padding = 40;
+        var noon = 60*12;
+        var midnight = 60*24;
         
         var dayLength = d3.select(element[0])
           .append("svg:svg")
@@ -55,7 +57,7 @@
         tooltip.append('div')
           .attr('class', 'sunset');
 
-        
+
         scope.$watch('lat', function() {
           console.log('lat triggered render!');
           Timezone.setLatLng(scope.lat, scope.lng);
@@ -199,17 +201,55 @@
           var minute_scale = d3.scale.linear()
             .domain([0, 24*60])
             .range([0, height]);
+
+          angular.forEach(data, function(d) {
+            d.sunset = calcSunriseSetUTC(0, d.date.getJulian(), scope.lat, scope.lng); 
+            if (typeof d.sunset === 'number')
+              d.sunset = Timezone.UTCMinutesToTZMinutes(d.date, d.sunset);
+            d.sunrise = calcSunriseSetUTC(1, d.date.getJulian(), scope.lat, scope.lng);
+            if (typeof d.sunrise === 'number')
+              d.sunrise = Timezone.UTCMinutesToTZMinutes(d.date, d.sunrise);
+
+            if (d.sunset > 60*24) {
+              console.log('sunset: ' + d.sunset);
+            }
+            if (d.sunrise < 0) {
+              console.log('sunrise: ' + d.sunrise);
+            }
+          });
+
+          var sunrise_before_midnight = function(d) {
+            return (d.sunrise > d.sunset && d.sunrise > noon);
+          };
+
+          var sunset_after_midnight = function(d) {
+            return (d.sunset < d.sunrise && d.sunset < noon);
+          };
           
           var sunriseLine = d3.svg.area()
             .x(function(d) { return x(d.date); })
+            .y0(function(d) {
+                if (d.sunrise === 'NO SUNRISE' || d.sunrise === 'NO SUNSET' || !sunset_after_midnight(d)) {
+                  return 0;
+                } else {
+                  console.log('sunset after midnight');
+                  console.log('sunrise y0 returning ' + minute_scale(d.sunset));
+                  return minute_scale(d.sunset);
+                }
+              })
             .y1(function(d) { 
-                d.sunrise = calcSunriseSetUTC(1, d.date.getJulian(), scope.lat, scope.lng);
-                d.sunrise = Timezone.UTCMinutesToTZMinutes(d.date, d.sunrise);
-                return minute_scale(d.sunrise);
+                if (d.sunrise === 'NO SUNRISE') {
+                  return height/2;
+                } else if (d.sunrise === 'NO SUNSET' || sunrise_before_midnight(d)) {
+                  console.log('sunrise before midnight');
+                  console.log('sunrise y1 returning ' + 0);
+                  return 0;
+                } else {
+                  return minute_scale(d.sunrise);
+                }
               })
             .interpolate("linear");
 
-          var bisectDate = d3.bisector(function(d) { return d.date; }).left;
           lineGroup
             .append("svg:path")
             .attr("d", sunriseLine(data))
@@ -217,11 +257,28 @@
           
           var sunsetLine = d3.svg.area()
             .x(function(d) { return x(d.date); })
-            .y0(height)
+            .y0(function(d) {
+                if (d.sunset === 'NO SUNSET' || d.sunset === 'NO SUNRISE' || !sunrise_before_midnight(d)) {
+                  console.log('sunset y0 returning ' + height);
+                  return height;
+                } else {
+                  console.log('sunrise before midnight');
+                  console.log('sunset y0 returning ' + minute_scale(d.sunrise));
+                  return minute_scale(d.sunrise);
+                }
+              })
             .y1(function(d) { 
-                d.sunset = calcSunriseSetUTC(0, d.date.getJulian(), scope.lat, scope.lng); 
-                d.sunset = Timezone.UTCMinutesToTZMinutes(d.date, d.sunset);
-                return minute_scale(d.sunset);
+                if (d.sunset === 'NO SUNRISE') {
+                  return height/2;
+                } else if (d.sunset === 'NO SUNSET' || sunset_after_midnight(d)) {
+                  console.log('sunset after midnight');
+                  console.log('sunset y1 returning ' + (height));
+                  return height;
+                } else {
+                  console.log(d.sunset);
+                  console.log('sunset y1 returning ' + minute_scale(d.sunset));
+                  return minute_scale(d.sunset);
+                }
               })
             .interpolate("linear");
           
@@ -238,6 +295,7 @@
             .attr("y2", d3.round(y(new Date(2011, 0, 1, 12))) + 0.5)
             .attr("stroke", "lightgray");
 
+          var bisectDate = d3.bisector(function(d) { return d.date; }).left;
           var indicator_params = {};
           indicator_params.radius = 5;
           indicator_params.stroke = 'darkgray';
