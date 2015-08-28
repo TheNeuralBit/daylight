@@ -1,9 +1,11 @@
 (function() {
  angular.module('daylight', ['tzwhere', 'leaflet-directive'])
-  .controller('DaylightController', ['Timezone', '$scope', function(Timezone, $scope) {
+  .controller('DaylightController', ['Timezone', '$scope', '$location', function(Timezone, $scope, $location) {
     var ctrl = this;
-    ctrl.lat = 40.744;
-    ctrl.lng = -73.982;
+    var keys = $location.search();
+    console.log(keys);
+    ctrl.lat = parseFloat(keys.lat);
+    ctrl.lng = parseFloat(keys.lng);
     ctrl.Timezone = Timezone;
     ctrl.markers = {};
     ctrl.markers.marker = {
@@ -12,9 +14,21 @@
       draggable: true
     };
 
+    $scope.$watch(function() {
+      return ctrl.markers.marker.lat;
+    }, function() {
+      $location.search('lat', ctrl.markers.marker.lat).replace();
+    }, true);
+
+    $scope.$watch(function() {
+      return ctrl.markers.marker.lng;
+    }, function() {
+      $location.search('lng', ctrl.markers.marker.lng).replace();
+    }, true);
+
     $scope.$on("leafletDirectiveMarker.dragend", function(event, args){
-        ctrl.markers.marker.lat = args.model.lat;
-        ctrl.markers.marker.lng = args.model.lng;
+        ctrl.markers.marker.lat = ((args.model.lat + 90) % 180) - 90;
+        ctrl.markers.marker.lng = ((args.model.lng + 180) % 360) - 180;
     });
   }])
   .factory('Timezone', ['$http', 'TZWhere', function($http, TZWhere) {
@@ -22,9 +36,25 @@
     factory.location = {lat: 0.0, lng: 0.0, timezone: ''};
     factory.setLatLng = setLatLng;
     factory.UTCMinutesToTZMinutes = UTCMinutesToTZMinutes;
-    TZWhere.init('./tz_world_compressed.json');
+    factory.postInits = [];
+    factory.initialized = false;
+    factory.addPostInit = addPostInit;
+    TZWhere.init('./tz_world_compressed.json').then(function() {
+      console.log('timezones loaded');
+      factory.initialized = true;
+      angular.forEach(factory.postInits, function(func) {func();} );
+    });
     
     // function definitions //
+    function addPostInit(func) {
+      if (factory.initialized === true) 
+        func();
+      else {
+        console.log('adding postInit function!');
+        factory.postInits.push(func);
+      }
+    }
+
     function setLatLng(lat, lng) {
       factory.location.lat = lat;
       factory.location.lng = lng;
@@ -43,6 +73,12 @@
       'restrict': 'EA',
       'scope': {lat: '=', lng: '='},
       'link': function(scope, element, attrs) {
+        Timezone.addPostInit(function() {
+          console.log('setting lat/lng');
+          Timezone.setLatLng(scope.lat, scope.lng);
+          console.log('render');
+          scope.render();
+        });
         var width = attrs.width || 700;
         var height = attrs.height || 525;
         var padding = 40;
@@ -64,12 +100,10 @@
 
 
         scope.$watch('lat', function() {
-          console.log('lat triggered render!');
           Timezone.setLatLng(scope.lat, scope.lng);
           scope.render();
         }, true);
         scope.$watch('lng', function() {
-          console.log('lng triggered render!');
           Timezone.setLatLng(scope.lat, scope.lng);
           scope.render();
         }, true);
@@ -214,13 +248,6 @@
             d.sunrise = calcSunriseSetUTC(1, d.date.getJulian(), scope.lat, scope.lng);
             if (typeof d.sunrise === 'number')
               d.sunrise = Timezone.UTCMinutesToTZMinutes(d.date, d.sunrise);
-
-            if (d.sunset > 60*24) {
-              console.log('sunset: ' + d.sunset);
-            }
-            if (d.sunrise < 0) {
-              console.log('sunrise: ' + d.sunrise);
-            }
           });
 
           var sunrise_before_midnight = function(d) {
@@ -237,8 +264,6 @@
                 if (d.sunrise === 'NO SUNRISE' || d.sunrise === 'NO SUNSET' || !sunset_after_midnight(d)) {
                   return 0;
                 } else {
-                  console.log('sunset after midnight');
-                  console.log('sunrise y0 returning ' + minute_scale(d.sunset));
                   return minute_scale(d.sunset);
                 }
               })
@@ -246,8 +271,6 @@
                 if (d.sunrise === 'NO SUNRISE') {
                   return height/2;
                 } else if (d.sunrise === 'NO SUNSET' || sunrise_before_midnight(d)) {
-                  console.log('sunrise before midnight');
-                  console.log('sunrise y1 returning ' + 0);
                   return 0;
                 } else {
                   return minute_scale(d.sunrise);
@@ -264,11 +287,8 @@
             .x(function(d) { return x(d.date); })
             .y0(function(d) {
                 if (d.sunset === 'NO SUNSET' || d.sunset === 'NO SUNRISE' || !sunrise_before_midnight(d)) {
-                  console.log('sunset y0 returning ' + height);
                   return height;
                 } else {
-                  console.log('sunrise before midnight');
-                  console.log('sunset y0 returning ' + minute_scale(d.sunrise));
                   return minute_scale(d.sunrise);
                 }
               })
@@ -276,12 +296,8 @@
                 if (d.sunset === 'NO SUNRISE') {
                   return height/2;
                 } else if (d.sunset === 'NO SUNSET' || sunset_after_midnight(d)) {
-                  console.log('sunset after midnight');
-                  console.log('sunset y1 returning ' + (height));
                   return height;
                 } else {
-                  console.log(d.sunset);
-                  console.log('sunset y1 returning ' + minute_scale(d.sunset));
                   return minute_scale(d.sunset);
                 }
               })
