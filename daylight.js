@@ -1,9 +1,15 @@
 (function() {
- angular.module('daylight', ['tzwhere'])
-  .controller('DaylightController', ['Timezone', function(Timezone) {
+ angular.module('daylight', ['tzwhere', 'leaflet-directive'])
+  .controller('DaylightController', ['Timezone', '$scope', function(Timezone, $scope) {
     this.lat = 40.744;
     this.lng = -73.982;
     this.Timezone = Timezone;
+    this.markers = {};
+    this.markers.marker = {
+      lat:this.lat,
+      lng:this.lng,
+      draggable: false
+    };
   }])
   .factory('Timezone', ['$http', 'TZWhere', function($http, TZWhere) {
     factory = {};
@@ -38,8 +44,8 @@
       'restrict': 'EA',
       'scope': {lat: '=', lng: '='},
       'link': function(scope, element, attrs) {
-        var width = 700;
-        var height = 525;
+        var width = attrs.width || 700;
+        var height = attrs.height || 525;
         var padding = 40;
         var noon = 60*12;
         var midnight = 60*24;

@@ -5,19 +5,29 @@
   </head>
   <body data-ng-app="daylight">
     <div data-ng-controller="DaylightController as ctrl">
-      <input type="number" data-ng-model="ctrl.lat">
-      <input type="number" data-ng-model="ctrl.lng">
+      <input type="number" data-ng-model="ctrl.markers.marker.lat">
+      <input type="number" data-ng-model="ctrl.markers.marker.lng">
       <span>{{ctrl.Timezone.location.timezone}}</span>
-      <div data-daylight-plot lat="ctrl.lat" lng="ctrl.lng"></div>
+      <div data-daylight-plot  lat="ctrl.markers.marker.lat" lng="ctrl.markers.marker.lng"></div>
+      <leaflet height="525" width="700" markers="ctrl.markers"></leaflet>
     </div>
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./lib/leaflet/dist/leaflet.css">
+
+    <!-- Libraries -->
     <script src="./lib/d3/d3.js" charset="utf-8"></script>
-    <script src="./lib/angular/angular.js"></script>
     <script src="./lib/moment/moment.js"></script>
     <script src="./lib/moment-timezone/builds/moment-timezone-with-data-2010-2020.js"></script>
-    <script src="./lib/sunrise_sunset.js"></script>
+    <script src="./lib/leaflet/dist/leaflet.js"></script>
+
+    <!-- AngularJS Libraries -->
+    <script src="./lib/angular/angular.js"></script>
+    <script src="./lib/angular-leaflet-directive/dist/angular-leaflet-directive.js"></script>
     <script src="./lib/angular-tzwhere/angular-tzwhere.js"></script>
+    <script src="./lib/sunrise_sunset.js"></script>
     <script src="./lib/geolib/dist/geolib.js"></script>
 
+    <!-- My Code -->
     <script src="./daylight.js"></script>
   </body>
 </html>
