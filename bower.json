@@ -3,6 +3,8 @@
   "version": "0.01",
   "dependencies": {
     "angular": "latest",
-    "moment-timezone": "latest"
+    "moment-timezone": "latest",
+    "geolib": "latest",
+    "d3": "latest"
   }
 }
