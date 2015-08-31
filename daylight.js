@@ -4,6 +4,7 @@
     var ctrl = this;
     var keys = $location.search();
 
+
     ctrl.lat = parseFloat(keys.lat);
     ctrl.lng = parseFloat(keys.lng);
     if (isNaN(ctrl.lat) || isNaN(ctrl.lng)) {
@@ -11,6 +12,7 @@
       ctrl.lng = -74.1;    
     }
     ctrl.Timezone = Timezone;
+    ctrl.timezonesLoaded = ctrl.Timezone.initialized;
     ctrl.markers = {};
     ctrl.markers.marker = {
       lat:this.lat,
@@ -147,7 +149,6 @@
           .attr('class', 'sunset');
 
 
-
         scope.$watch('lat', function() {
           Timezone.setLatLng(scope.lat, scope.lng);
           scope.render();
@@ -175,7 +176,7 @@
           
           // Create a list of dates from the x() time scale
           // Gets dates evenly spaced every 5 days
-          var data = x.ticks(d3.time.days, 5).map( function(date){ return {date: date}; } );
+          var data = x.ticks(d3.time.days, 1).map( function(date){ return {date: date}; } );
           
           function yAxisLabel(d) {
             if (d == 12) { return "noon"; }

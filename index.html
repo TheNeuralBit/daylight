@@ -3,15 +3,20 @@
   <head>
     <title>Daylight</title>
   </head>
-  <body data-ng-app="daylight">
-    <div data-ng-controller="DaylightController as ctrl">
+  <body data-ng-app="daylight" data-ng-controller="DaylightController as ctrl">
+    <div id="splash" ng-hide="ctrl.Timezone.initialized">
+      <h2>Loading...</h2>
+    </div>
+    <div ng-cloak ng-show="ctrl.Timezone.initialized">
+    <div>
       <input type="number" data-ng-model="ctrl.lat">
       <input type="number" data-ng-model="ctrl.lng">
       <span>{{ctrl.Timezone.location.timezone}}</span>
       <div data-daylight-plot  lat="ctrl.lat" lng="ctrl.lng"></div>
       <leaflet height="525" width="700" markers="ctrl.markers"></leaflet>
     </div>
-    <a href="http://github.com/TheNeuralBit/daylight"><img src="./img/github.png" width="80px" height="80px"></img></a>
+    <a ng-cloak href="http://github.com/TheNeuralBit/daylight"><img src="./img/github.png" width="80px" height="80px"></img></a>
+    </div>
 
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./lib/leaflet/dist/leaflet.css">
