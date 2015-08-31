@@ -1,6 +1,6 @@
 (function() {
  angular.module('daylight', ['tzwhere', 'leaflet-directive'])
-  .controller('DaylightController', ['Timezone', '$scope', '$location', function(Timezone, $scope, $location) {
+  .controller('DaylightController', ['Timezone', '$scope', '$location', 'LatLngHelper', function(Timezone, $scope, $location, helper) {
     var ctrl = this;
     var keys = $location.search();
 
@@ -20,32 +20,65 @@
     console.log(ctrl.markers.marker);
 
     $scope.$watch(function() {
-      return ctrl.markers.marker.lat;
+      return ctrl.lat;
     }, function() {
-      $location.search('lat', ctrl.markers.marker.lat).replace();
+      $location.search('lat', ctrl.lat).replace();
+      console.log('ctrl.lat modified: ' + ctrl.lat);
+      console.log('marker position: ' + ctrl.markers.marker.lat);
+      if (ctrl.lat !== undefined && ctrl.lat !== null && !helper.equalLatitude(ctrl.markers.marker.lat, ctrl.lat))
+        ctrl.markers.marker.lat = ctrl.lat;
     }, true);
 
     $scope.$watch(function() {
-      return ctrl.markers.marker.lng;
+      return ctrl.lng;
     }, function() {
-      $location.search('lng', ctrl.markers.marker.lng).replace();
+      $location.search('lng', ctrl.lng).replace();
+      console.log('ctrl.lng modified: ' + ctrl.lng);
+      console.log('marker position: ' + ctrl.markers.marker.lng);
+      if (ctrl.lng !== undefined && ctrl.lng !== null && !helper.equalLongitude(ctrl.markers.marker.lng, ctrl.lng))
+        ctrl.markers.marker.lng = ctrl.lng;
     }, true);
 
     $scope.$on("leafletDirectiveMarker.dragend", function(event, args){
-        ctrl.markers.marker.lat = ((args.model.lat + 90) % 180) - 90;
-        ctrl.markers.marker.lng = ((args.model.lng + 180) % 360) - 180;
+        console.log('marker moved: ' + args.model.lat + ', ' + args.model.lng);
+        ctrl.markers.marker.lat = args.model.lat;
+        ctrl.markers.marker.lng = args.model.lng;
+        ctrl.lat = helper.conditionLatitude(args.model.lat);
+        ctrl.lng = helper.conditionLongitude(args.model.lng);
+        //ctrl.lat = args.model.lat;
+        //ctrl.lng = args.model.lng;
     });
   }])
+  .factory('LatLngHelper', function() {
+    var factory = {};
+    factory.epsilon = 0.001;
+    factory.conditionLatitude = limitRange(90);
+    factory.conditionLongitude = limitRange(180);
+    factory.equalLatitude = function(a, b) {
+      return Math.abs(factory.conditionLatitude(a) - factory.conditionLatitude(b)) < factory.epsilon;
+    };
+    factory.equalLongitude = function(a, b) {
+      return Math.abs(factory.conditionLongitude(a) - factory.conditionLongitude(b)) < factory.epsilon;
+    };
+
+    function limitRange(range) {
+      return function limit(val) {
+        return ((val + range) % (range*2)) - range;
+      };
+    }
+
+    return factory;
+  })
   .factory('Timezone', ['$http', 'TZWhere', function($http, TZWhere) {
-    factory = {};
+    var factory = {};
     factory.location = {lat: 0.0, lng: 0.0, timezone: ''};
     factory.setLatLng = setLatLng;
     factory.UTCMinutesToTZMinutes = UTCMinutesToTZMinutes;
     factory.postInits = [];
     factory.initialized = false;
     factory.addPostInit = addPostInit;
+    factory.formatMinutes = formatMinutes;
     TZWhere.init('./tz_world_compressed.json').then(function() {
-      console.log('timezones loaded');
       factory.initialized = true;
       angular.forEach(factory.postInits, function(func) {func();} );
     });
@@ -55,7 +88,6 @@
       if (factory.initialized === true) 
         func();
       else {
-        console.log('adding postInit function!');
         factory.postInits.push(func);
       }
     }
@@ -66,9 +98,17 @@
       factory.location.timezone = TZWhere.tzNameAt(lat, lng);
     }
 
+    function buildMoment(day, minutes) {
+      return moment(day).utc().hours(0).minutes(minutes).seconds((minutes % 1)*60);
+    }
+
     function UTCMinutesToTZMinutes(day, minutes){
-      var my_moment = moment(day).utc().hours(0).minutes(minutes).seconds((minutes % 1)*60).tz(factory.location.timezone);
+      var my_moment = buildMoment(day, minutes).tz(factory.location.timezone);
       return my_moment.hours()*60 + my_moment.minutes() + my_moment.seconds()/60;
+    }
+    
+    function formatMinutes(day, minutes) {
+      return buildMoment(day, minutes).format('h:mm A');
     }
 
     return factory;
@@ -79,9 +119,7 @@
       'scope': {lat: '=', lng: '='},
       'link': function(scope, element, attrs) {
         Timezone.addPostInit(function() {
-          console.log('setting lat/lng');
           Timezone.setLatLng(scope.lat, scope.lng);
-          console.log('render');
           scope.render();
         });
         var width = attrs.width || 700;
@@ -98,10 +136,16 @@
         var tooltip = d3.select(element[0])
           .append('div')
           .attr('class', 'tooltip');
+
+        tooltip.append('div')
+          .attr('class', 'date');
+
         tooltip.append('div')
           .attr('class', 'sunrise');
+
         tooltip.append('div')
           .attr('class', 'sunset');
+
 
 
         scope.$watch('lat', function() {
@@ -116,7 +160,6 @@
         scope.render = function() {
           dayLength.selectAll('*').remove();
 
-          console.log('rendering!');
           // the vertical axis is a time scale that runs from 00:00 - 23:59
           // the horizontal axis is a time scale that runs from the 2011-01-01 to 2011-12-31
           
@@ -355,6 +398,11 @@
             };
           };
           
+          var formatMinute = function(min) { 
+            if (typeof min !== 'number')
+              return min;
+            return Math.floor(min/60) + ':' + Math.round(min % 60);
+          };
           var enableIndicators = setIndicatorDisplay('block');
           var disableIndicators = setIndicatorDisplay('none');
 
@@ -368,8 +416,9 @@
                   d0 = data[i];
                   d1 = data[i+1];
                   
-              tooltip.select('.sunrise').html(d0.sunrise);
-              tooltip.select('.sunset').html(d0.sunrise);
+              tooltip.select('.date').html(moment(d0.date).format('LL'));
+              tooltip.select('.sunrise').html('<b>Sunrise:</b> ' + Timezone.formatMinutes(d0.date, d0.sunrise));
+              tooltip.select('.sunset').html('<b>Sunset:</b> ' + Timezone.formatMinutes(d0.date, d0.sunset));
 
               var sunrise_pos = minute_scale(d0.sunrise);
               var sunset_pos = minute_scale(d0.sunset);

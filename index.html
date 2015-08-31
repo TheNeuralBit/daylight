@@ -5,10 +5,10 @@
   </head>
   <body data-ng-app="daylight">
     <div data-ng-controller="DaylightController as ctrl">
-      <input type="number" data-ng-model="ctrl.markers.marker.lat">
-      <input type="number" data-ng-model="ctrl.markers.marker.lng">
+      <input type="number" data-ng-model="ctrl.lat">
+      <input type="number" data-ng-model="ctrl.lng">
       <span>{{ctrl.Timezone.location.timezone}}</span>
-      <div data-daylight-plot  lat="ctrl.markers.marker.lat" lng="ctrl.markers.marker.lng"></div>
+      <div data-daylight-plot  lat="ctrl.lat" lng="ctrl.lng"></div>
       <leaflet height="525" width="700" markers="ctrl.markers"></leaflet>
     </div>
     <link rel="stylesheet" href="./css/style.css">
