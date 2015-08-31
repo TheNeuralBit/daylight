@@ -3,9 +3,9 @@
   .controller('DaylightController', ['Timezone', '$scope', '$location', function(Timezone, $scope, $location) {
     var ctrl = this;
     var keys = $location.search();
-    console.log(keys);
-    ctrl.lat = parseFloat(keys.lat) | 42.5;
-    ctrl.lng = parseFloat(keys.lng) | -74.1;
+
+    ctrl.lat = parseFloat(keys.lat) || 42.5;
+    ctrl.lng = parseFloat(keys.lng) || -74.1;
     ctrl.Timezone = Timezone;
     ctrl.markers = {};
     ctrl.markers.marker = {
@@ -13,6 +13,7 @@
       lng:this.lng,
       draggable: true
     };
+    console.log(ctrl.markers.marker);
 
     $scope.$watch(function() {
       return ctrl.markers.marker.lat;
