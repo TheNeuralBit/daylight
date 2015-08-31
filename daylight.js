@@ -407,7 +407,7 @@
           var enableIndicators = setIndicatorDisplay('block');
           var disableIndicators = setIndicatorDisplay('none');
 
-          lineGroup.selectAll('rect, path')
+          lineGroup
             .on('mouseenter', enableIndicators)
             .on('mouseleave', disableIndicators)
             .on('mousemove', function() {
