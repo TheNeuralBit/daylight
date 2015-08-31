@@ -12,7 +12,6 @@
       ctrl.lng = -74.1;    
     }
     ctrl.Timezone = Timezone;
-    ctrl.timezonesLoaded = ctrl.Timezone.initialized;
     ctrl.markers = {};
     ctrl.markers.marker = {
       lat:this.lat,
