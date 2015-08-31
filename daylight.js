@@ -4,8 +4,12 @@
     var ctrl = this;
     var keys = $location.search();
 
-    ctrl.lat = parseFloat(keys.lat) || 42.5;
-    ctrl.lng = parseFloat(keys.lng) || -74.1;
+    ctrl.lat = parseFloat(keys.lat);
+    ctrl.lng = parseFloat(keys.lng);
+    if (isNaN(ctrl.lat) || isNaN(ctrl.lng)) {
+      ctrl.lat = 42.5;
+      ctrl.lng = -74.1;    
+    }
     ctrl.Timezone = Timezone;
     ctrl.markers = {};
     ctrl.markers.marker = {
