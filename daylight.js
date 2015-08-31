@@ -161,13 +161,14 @@
           dayLength.selectAll('*').remove();
 
           // the vertical axis is a time scale that runs from 00:00 - 23:59
-          // the horizontal axis is a time scale that runs from the 2011-01-01 to 2011-12-31
+          // the horizontal axis is a time scale that runs from the <year>-01-01 to <year>-12-31
           
+          var year = 2015;
           var y = d3.time.scale()
-            .domain([new Date(2011, 0, 1), new Date(2011, 0, 1, 23, 59)])
+            .domain([new Date(year, 0, 1), new Date(year, 0, 1, 23, 59)])
             .range([0, height]);
           var x = d3.time.scale()
-            .domain([new Date(2011, 0, 1), new Date(2011, 11, 31)])
+            .domain([new Date(year, 0, 1), new Date(year, 11, 31)])
             .range([0, width]);
           
           var monthNames = ["Jan", "Feb", "Mar", "April", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -186,7 +187,7 @@
           // month
           
           function midMonthDates() {
-            return d3.range(0, 12).map(function(i) { return new Date(2011, i, 15); });
+            return d3.range(0, 12).map(function(i) { return new Date(year, i, 15); });
           }
           
           // create a group to hold the axis-related elements
@@ -202,9 +203,9 @@
             .enter().append("svg:line")
             .attr("x1", -5)
             // Round and add 0.5 to fix anti-aliasing effects (see above)
-            .attr("y1", function(d) { return d3.round(y(new Date(2011, 0, 1, d))) + 0.5; })
+            .attr("y1", function(d) { return d3.round(y(new Date(year, 0, 1, d))) + 0.5; })
             .attr("x2", width + 5)
-            .attr("y2", function(d) { return d3.round(y(new Date(2011, 0, 1, d))) + 0.5; })
+            .attr("y2", function(d) { return d3.round(y(new Date(year, 0, 1, d))) + 0.5; })
             .attr("stroke", "lightgray")
             .attr("class", "yTicks");
           
@@ -248,7 +249,7 @@
             .append("svg:text")
             .text(yAxisLabel)
             .attr("x", -7)
-            .attr("y", function(d) { return y(new Date(2011, 0, 1, d)); })
+            .attr("y", function(d) { return y(new Date(year, 0, 1, d)); })
             .attr("dy", "3")
             .attr("class", "yAxisLeft")
             .attr("text-anchor", "end");
@@ -259,7 +260,7 @@
             .append("svg:text")
             .text(yAxisLabel)
             .attr("x", width+7)
-            .attr("y", function(d) { return y(new Date(2011, 0, 1, d)); })
+            .attr("y", function(d) { return y(new Date(year, 0, 1, d)); })
             .attr("dy", "3")
             .attr("class", "yAxisRight")
             .attr("text-anchor", "start");
@@ -359,9 +360,9 @@
           // visualization
           lineGroup.append("svg:line")
             .attr("x1", 0)
-            .attr("y1", d3.round(y(new Date(2011, 0, 1, 12))) + 0.5)
+            .attr("y1", d3.round(y(new Date(year, 0, 1, 12))) + 0.5)
             .attr("x2", width)
-            .attr("y2", d3.round(y(new Date(2011, 0, 1, 12))) + 0.5)
+            .attr("y2", d3.round(y(new Date(year, 0, 1, 12))) + 0.5)
             .attr("stroke", "lightgray");
 
           var bisectDate = d3.bisector(function(d) { return d.date; }).left;
