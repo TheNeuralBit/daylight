@@ -114,7 +114,7 @@
 
     return factory;
   }])
-  .directive('daylightPlot', ['Timezone', function(Timezone) {
+  .directive('daylightPlot', ['Timezone', '$window', function(Timezone, $window) {
     return {
       'restrict': 'EA',
       'scope': {lat: '=', lng: '='},
@@ -123,7 +123,6 @@
           Timezone.setLatLng(scope.lat, scope.lng);
           scope.render();
         });
-        var width = attrs.width || 700;
         var height = attrs.height || 525;
         var padding = 40;
         var noon = 60*12;
@@ -131,7 +130,7 @@
         
         var dayLength = d3.select(element[0])
           .append("svg:svg")
-          .attr("width", width + padding * 2)
+          .style("width", "100%")
           .attr("height", height + padding * 2);
       
         var tooltip = d3.select(element[0])
@@ -156,9 +155,14 @@
           Timezone.setLatLng(scope.lat, scope.lng);
           scope.render();
         }, true);
+        angular.element($window).bind('resize', function() { 
+          console.log('width changed - re-rendering!');
+          scope.render();
+        });
         
         scope.render = function() {
           dayLength.selectAll('*').remove();
+          var width = d3.select(element[0]).node().offsetWidth - padding*2;
 
           // the vertical axis is a time scale that runs from 00:00 - 23:59
           // the horizontal axis is a time scale that runs from the <year>-01-01 to <year>-12-31
