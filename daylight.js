@@ -70,24 +70,13 @@
     factory.location = {lat: 0.0, lng: 0.0, timezone: ''};
     factory.setLatLng = setLatLng;
     factory.UTCMinutesToTZMinutes = UTCMinutesToTZMinutes;
-    factory.postInits = [];
     factory.initialized = false;
-    factory.addPostInit = addPostInit;
     factory.formatMinutes = formatMinutes;
     TZWhere.init('./tz_world_compressed.json').then(function() {
       factory.initialized = true;
-      angular.forEach(factory.postInits, function(func) {func();} );
     });
     
     // function definitions //
-    function addPostInit(func) {
-      if (factory.initialized === true) 
-        func();
-      else {
-        factory.postInits.push(func);
-      }
-    }
-
     function setLatLng(lat, lng) {
       factory.location.lat = lat;
       factory.location.lng = lng;
@@ -114,9 +103,14 @@
       'restrict': 'EA',
       'scope': {lat: '=', lng: '='},
       'link': function(scope, element, attrs) {
-        Timezone.addPostInit(function() {
+        scope.$watch(function() { return Timezone.initialized; }, function() {
+          if (!Timezone.initialized)
+            return;
+
+          console.log('Timezones initialized, rendering!');
           Timezone.setLatLng(scope.lat, scope.lng);
-          scope.render();
+          scope.data = scope.computeData(scope.data);
+          scope.render(scope.data);
         });
         var height = attrs.height || 525;
         var padding = 40;
@@ -143,38 +137,58 @@
 
 
         scope.$watch('lat', function() {
+          if (!Timezone.initialized)
+            return;
           Timezone.setLatLng(scope.lat, scope.lng);
-          scope.render();
+          scope.data = scope.computeData(scope.data);
+          scope.render(scope.data);
         }, true);
         scope.$watch('lng', function() {
+          if (!Timezone.initialized)
+            return;
           Timezone.setLatLng(scope.lat, scope.lng);
-          scope.render();
+          scope.data = scope.computeData(scope.data);
+          scope.render(scope.data);
         }, true);
         angular.element($window).bind('resize', function() { 
           console.log('width changed - re-rendering!');
-          scope.render();
+          scope.render(scope.data);
         });
-        
-        scope.render = function() {
-          dayLength.selectAll('*').remove();
-          var width = d3.select(element[0]).node().offsetWidth - padding*2;
 
-          // the vertical axis is a time scale that runs from 00:00 - 23:59
-          // the horizontal axis is a time scale that runs from the <year>-01-01 to <year>-12-31
+
+        // the vertical axis is a time scale that runs from 00:00 - 23:59
+        // the horizontal axis is a time scale that runs from the <year>-01-01 to <year>-12-31
+        
+        var year = 2015;
+        var y = d3.time.scale()
+          .domain([new Date(year, 0, 1), new Date(year, 0, 1, 23, 59)]);
+        var x = d3.time.scale()
+          .domain([new Date(year, 0, 1), new Date(year, 11, 31)]);
+        
+        var monthNames = ["Jan", "Feb", "Mar", "April", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        // Create a list of dates from the x() time scale
+        // Gets dates evenly spaced every 5 days
+        scope.data = x.ticks(d3.time.days, 1).map( function(date){ return {date: date}; } );
+        
+        scope.computeData = function(data) {
+          angular.forEach(data, function(d) {
+            d.sunset = calcSunriseSetUTC(0, d.date.getJulian(), scope.lat, scope.lng); 
+            if (typeof d.sunset === 'number')
+              d.sunset = Timezone.UTCMinutesToTZMinutes(d.date, d.sunset);
+            d.sunrise = calcSunriseSetUTC(1, d.date.getJulian(), scope.lat, scope.lng);
+            if (typeof d.sunrise === 'number')
+              d.sunrise = Timezone.UTCMinutesToTZMinutes(d.date, d.sunrise);
+          });
+          return data;
+        };
+
+        scope.render = function(data) {
+          dayLength.selectAll('*').remove();
+          console.log(dayLength.node().offsetWidth);
+          var width = dayLength.node().offsetWidth - padding*2;
+          y = y.range([0, height]);
+          x = x.range([0, width]);
           
-          var year = 2015;
-          var y = d3.time.scale()
-            .domain([new Date(year, 0, 1), new Date(year, 0, 1, 23, 59)])
-            .range([0, height]);
-          var x = d3.time.scale()
-            .domain([new Date(year, 0, 1), new Date(year, 11, 31)])
-            .range([0, width]);
-          
-          var monthNames = ["Jan", "Feb", "Mar", "April", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-          
-          // Create a list of dates from the x() time scale
-          // Gets dates evenly spaced every 5 days
-          var data = x.ticks(d3.time.days, 1).map( function(date){ return {date: date}; } );
           
           function yAxisLabel(d) {
             if (d == 12) { return "noon"; }
@@ -288,15 +302,6 @@
           var minute_scale = d3.scale.linear()
             .domain([0, 24*60])
             .range([0, height]);
-
-          angular.forEach(data, function(d) {
-            d.sunset = calcSunriseSetUTC(0, d.date.getJulian(), scope.lat, scope.lng); 
-            if (typeof d.sunset === 'number')
-              d.sunset = Timezone.UTCMinutesToTZMinutes(d.date, d.sunset);
-            d.sunrise = calcSunriseSetUTC(1, d.date.getJulian(), scope.lat, scope.lng);
-            if (typeof d.sunrise === 'number')
-              d.sunrise = Timezone.UTCMinutesToTZMinutes(d.date, d.sunrise);
-          });
 
           var sunrise_before_midnight = function(d) {
             return (d.sunrise > d.sunset && d.sunrise > noon);
