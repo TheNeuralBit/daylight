@@ -53,6 +53,10 @@
     }
 }
 
+.angular-leaflet-map {
+  margin: 40px 0;
+}
+
 svg#daylight-plot {
   position: relative;
 }
@@ -73,4 +77,8 @@ svg#daylight-plot {
 
 .tooltip .date {
   font-weight: bold;
+}
+
+.hidethis {
+  visibility: hidden;
 }
