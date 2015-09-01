@@ -18,14 +18,11 @@
       lng:this.lng,
       draggable: true
     };
-    console.log(ctrl.markers.marker);
 
     $scope.$watch(function() {
       return ctrl.lat;
     }, function() {
       $location.search('lat', ctrl.lat).replace();
-      console.log('ctrl.lat modified: ' + ctrl.lat);
-      console.log('marker position: ' + ctrl.markers.marker.lat);
       if (ctrl.lat !== undefined && ctrl.lat !== null && !helper.equalLatitude(ctrl.markers.marker.lat, ctrl.lat))
         ctrl.markers.marker.lat = ctrl.lat;
     }, true);
@@ -34,8 +31,6 @@
       return ctrl.lng;
     }, function() {
       $location.search('lng', ctrl.lng).replace();
-      console.log('ctrl.lng modified: ' + ctrl.lng);
-      console.log('marker position: ' + ctrl.markers.marker.lng);
       if (ctrl.lng !== undefined && ctrl.lng !== null && !helper.equalLongitude(ctrl.markers.marker.lng, ctrl.lng))
         ctrl.markers.marker.lng = ctrl.lng;
     }, true);
