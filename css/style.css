@@ -2,6 +2,20 @@
   text-align: center;
 }
 
+.center-container {
+  display: table;
+  vertical-align: middle;
+}
+
+.full-height {
+  height: 100%
+}
+
+.vertical-center-row {
+  display: table-cell;
+  vertical-align: middle;
+}
+
 [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
   display: none !important;
 }
