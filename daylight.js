@@ -184,8 +184,15 @@
 
         scope.render = function(data) {
           dayLength.selectAll('*').remove();
-          console.log(dayLength.node().offsetWidth);
-          var width = dayLength.node().offsetWidth - padding*2;
+          var width;
+
+          width = dayLength.node().offsetWidth;
+          // Special case for firefox
+          // offsetWidth doesnt work for SVG elements in FF
+          if (width === undefined) {
+            width = parseInt(window.getComputedStyle(dayLength.node()).width.slice(0,-2));
+          }
+          width = width - padding*2;
           y = y.range([0, height]);
           x = x.range([0, width]);
           

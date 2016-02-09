@@ -4,7 +4,7 @@
     <title>Daylight</title>
   </head>
   <body ng-class="{'full-height': !ctrl.Timezone.initialized}">
-    <div id="splash" ng-class="{hidethis: ctrl.Timezone.initialized}" class="container center-container full-height">
+    <div id="splash" ng-class="{hidethis: ctrl.Timezone.initialized}" class="container center-container full-height" ng-hide="ctrl.Timezone.initialized">
       <div class="row vertical-center-row">
         <div class="col-lg-12">
           <div class="row">
