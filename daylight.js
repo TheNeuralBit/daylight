@@ -41,8 +41,6 @@
         ctrl.markers.marker.lng = args.model.lng;
         ctrl.lat = helper.conditionLatitude(args.model.lat);
         ctrl.lng = helper.conditionLongitude(args.model.lng);
-        //ctrl.lat = args.model.lat;
-        //ctrl.lng = args.model.lng;
     });
   }])
   .factory('LatLngHelper', function() {
@@ -59,7 +57,9 @@
 
     function limitRange(range) {
       return function limit(val) {
-        return ((val + range) % (range*2)) - range;
+        while (val < -1*range) val += range*2;
+        while (val > range) val -= range*2;
+        return val;
       };
     }
 
